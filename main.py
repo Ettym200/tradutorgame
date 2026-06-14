@@ -1,27 +1,65 @@
 import sys
 import ctypes
-import subprocess
+import platform
 
-# Re-lança como admin se necessário (para hotkeys funcionarem em jogos)
-def _is_admin():
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
+IS_WINDOWS = platform.system() == "Windows"
+IS_LINUX   = platform.system() == "Linux"
 
-if not _is_admin():
-    ctypes.windll.shell32.ShellExecuteW(
-        None, "runas", sys.executable, " ".join(f'"{a}"' for a in sys.argv), None, 1
-    )
-    sys.exit(0)
+# Windows: re-lança como admin para hotkeys funcionarem em jogos
+if IS_WINDOWS:
+    def _is_admin():
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        except:
+            return False
+
+    if not _is_admin():
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, " ".join(f'"{a}"' for a in sys.argv), None, 1
+        )
+        sys.exit(0)
 
 import tkinter as tk
 from tkinter import ttk
 import threading
 import json
 import os
-import keyboard
 from PIL import Image
+
+# Hotkeys: keyboard no Windows, pynput no Linux
+if IS_WINDOWS:
+    import keyboard
+    def _add_hotkey(key, fn):
+        if key:
+            keyboard.add_hotkey(key, fn)
+    def _unhook_all():
+        keyboard.unhook_all()
+else:
+    from pynput import keyboard as pynput_kb
+    _hotkey_listener = None
+    _hotkey_map = {}
+
+    def _add_hotkey(key, fn):
+        _hotkey_map[key.lower()] = fn
+
+    def _unhook_all():
+        global _hotkey_listener
+        _hotkey_map.clear()
+        if _hotkey_listener:
+            _hotkey_listener.stop()
+            _hotkey_listener = None
+
+    def _start_pynput():
+        global _hotkey_listener
+        def on_press(k):
+            try:
+                name = k.name.lower() if hasattr(k, "name") else k.char
+                if name in _hotkey_map:
+                    _hotkey_map[name]()
+            except Exception:
+                pass
+        _hotkey_listener = pynput_kb.Listener(on_press=on_press)
+        _hotkey_listener.start()
 from capture import ScreenCapture
 from translator import Translator, KNOWN_PROVIDERS
 from overlay import Overlay
@@ -297,16 +335,12 @@ class App(tk.Tk):
         self._register_hotkeys()
 
     def _register_hotkeys(self):
-        keyboard.unhook_all()
-        hk_region = self.hotkey_region_var.get()
-        hk_translate = self.hotkey_translate_var.get()
-        hk_toggle = self.hotkey_toggle_var.get()
-        if hk_region:
-            keyboard.add_hotkey(hk_region, lambda: self.after(0, self._select_region))
-        if hk_translate:
-            keyboard.add_hotkey(hk_translate, lambda: self.after(0, self._toggle))
-        if hk_toggle:
-            keyboard.add_hotkey(hk_toggle, lambda: self.after(0, self._toggle_overlay))
+        _unhook_all()
+        _add_hotkey(self.hotkey_region_var.get(),    lambda: self.after(0, self._select_region))
+        _add_hotkey(self.hotkey_translate_var.get(), lambda: self.after(0, self._toggle))
+        _add_hotkey(self.hotkey_toggle_var.get(),    lambda: self.after(0, self._toggle_overlay))
+        if IS_LINUX:
+            _start_pynput()
 
     def _open_help(self):
         win = tk.Toplevel(self)
