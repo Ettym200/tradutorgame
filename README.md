@@ -32,10 +32,37 @@ A tradução aparece num overlay flutuante e transparente diretamente sobre o jo
 
 ## Como instalar
 
+### Windows
+
 1. Instale o [Python 3.8+](https://www.python.org/downloads/) — marque **"Add Python to PATH"**
 2. Clone ou baixe este repositório
 3. Execute `instalar.bat` — instala todas as dependências automaticamente
 4. Execute `iniciar.bat` para abrir o app
+
+> O app pedirá permissão de administrador automaticamente — necessário para os atalhos de teclado funcionarem dentro do jogo.
+
+### Linux
+
+1. Instale o Python 3.8+ pelo seu gerenciador de pacotes:
+```bash
+# Ubuntu/Debian
+sudo apt install python3 python3-pip
+
+# Arch
+sudo pacman -S python python-pip
+```
+2. Clone o repositório e instale as dependências:
+```bash
+git clone https://github.com/Ettym200/tradutorgame
+cd tradutorgame
+pip install -r requirements.txt
+```
+3. Execute o app:
+```bash
+bash iniciar.sh
+```
+
+> **Wayland vs X11:** o app funciona melhor no X11. No Wayland, a captura de tela e os atalhos globais podem ter limitações dependendo do compositor. Se os atalhos não funcionarem, rode com `sudo`.
 
 ---
 
