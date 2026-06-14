@@ -1,0 +1,6 @@
+mss
+Pillow
+numpy
+openai
+anthropic
+keyboard
