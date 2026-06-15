@@ -2,7 +2,9 @@
 
 Tradução simultânea de legendas e textos de jogos usando IA, direto na sua tela.
 
-![Python](https://img.shields.io/badge/Python-3.8+-blue) ![License](https://img.shields.io/badge/License-MIT-green)
+![Python](https://img.shields.io/badge/Python-3.8+-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Branch](https://img.shields.io/badge/Linux-branch%20linux--support-orange)
+
+> ⚠️ **Usuários Linux:** use a branch [`linux-support`](https://github.com/Ettym200/tradutorgame/tree/linux-support) — ela contém suporte a hotkeys via `pynput` e o script `iniciar.sh`.
 
 ---
 
@@ -43,6 +45,8 @@ A tradução aparece num overlay flutuante e transparente diretamente sobre o jo
 
 ### Linux
 
+> ⚠️ Use a branch **`linux-support`** — a branch `master` é apenas para Windows.
+
 1. Instale o Python 3.8+ pelo seu gerenciador de pacotes:
 ```bash
 # Ubuntu/Debian
@@ -51,9 +55,9 @@ sudo apt install python3 python3-pip
 # Arch
 sudo pacman -S python python-pip
 ```
-2. Clone o repositório e instale as dependências:
+2. Clone a branch correta:
 ```bash
-git clone https://github.com/Ettym200/tradutorgame
+git clone -b linux-support https://github.com/Ettym200/tradutorgame
 cd tradutorgame
 pip install -r requirements.txt
 ```
@@ -62,7 +66,7 @@ pip install -r requirements.txt
 bash iniciar.sh
 ```
 
-> **Wayland vs X11:** o app funciona melhor no X11. No Wayland, a captura de tela e os atalhos globais podem ter limitações dependendo do compositor. Se os atalhos não funcionarem, rode com `sudo`.
+> **Wayland vs X11:** funciona melhor no X11. No Wayland os atalhos globais podem ter limitações. Se não funcionarem, rode com `sudo`.
 
 ---
 
