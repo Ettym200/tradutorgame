@@ -10,15 +10,9 @@ def _img_to_base64(img: Image.Image) -> str:
 
 
 PROMPT = (
-    "Você é um tradutor especializado em jogos, mangás e cultura pop. "
     "Esta é uma captura de tela de um jogo. "
     "Extraia APENAS o texto de legenda ou diálogo visível (ignore HUD, números, nomes de missão, ícones). "
-    "Traduza esse texto para {lang} com as seguintes regras:\n"
-    "- Preserve o tom e emoção original (sarcasmo, humor, drama)\n"
-    "- Gírias e expressões idiomáticas devem ser traduzidas pelo SIGNIFICADO, não literalmente. "
-    "Exemplo: 'food desert' = 'área sem recursos', 'break a leg' = 'boa sorte'\n"
-    "- Nomes próprios de personagens e lugares NÃO devem ser traduzidos\n"
-    "- Termos técnicos do jogo (nomes de habilidades, itens) mantenha em inglês se não tiver tradução natural\n"
+    "Traduza esse texto para {lang}. "
     "Responda SOMENTE com a tradução, sem explicações. "
     "Se não houver legenda ou diálogo, responda com uma string vazia."
 )
@@ -79,8 +73,7 @@ class Translator:
         return self._clean(result)
 
     def _clean(self, text: str) -> str:
-        if not text:
-            return ""
+        # Remove blocos markdown ```...``` que algumas IAs retornam
         import re
         text = re.sub(r"```[a-z]*\n?", "", text).strip("`").strip()
         return text
@@ -97,8 +90,7 @@ class Translator:
             }],
             max_tokens=300,
         )
-        content = response.choices[0].message.content
-        return content.strip() if content else ""
+        return response.choices[0].message.content.strip()
 
     def _translate_anthropic(self, b64: str, prompt: str) -> str:
         response = self._client.messages.create(
@@ -112,5 +104,4 @@ class Translator:
                 ],
             }],
         )
-        content = response.content[0].text if response.content else ""
-        return content.strip() if content else ""
+        return response.content[0].text.strip()

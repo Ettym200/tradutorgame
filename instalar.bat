@@ -1,7 +1,6 @@
 @echo off
 chcp 65001 >nul
 title Game Translator - Instalador
-cd /d "%~dp0"
 
 echo.
 echo  ================================
@@ -9,38 +8,29 @@ echo   Game Translator - Instalando
 echo  ================================
 echo.
 
-:: Detecta o Python disponível
-set PYTHON=
+:: Verifica se Python está instalado
 python --version >nul 2>&1
-if %errorlevel% == 0 set PYTHON=python
-
-if "%PYTHON%"=="" (
-    python3 --version >nul 2>&1
-    if %errorlevel% == 0 set PYTHON=python3
-)
-
-if "%PYTHON%"=="" (
+if errorlevel 1 (
     echo  [ERRO] Python nao encontrado!
     echo.
-    echo  Instale em: https://www.python.org/downloads/
-    echo  IMPORTANTE: Marque "Add Python to PATH" durante a instalacao.
+    echo  Instale o Python em: https://www.python.org/downloads/
+    echo  Marque a opcao "Add Python to PATH" durante a instalacao.
     echo.
     pause
     exit /b 1
 )
 
-echo  [OK] Python encontrado: %PYTHON%
+echo  [OK] Python encontrado.
 echo.
 echo  Instalando dependencias...
 echo.
 
-%PYTHON% -m pip install --upgrade pip
-%PYTHON% -m pip install mss Pillow numpy openai anthropic keyboard
+pip install mss Pillow numpy openai anthropic
 
 echo.
 echo  ================================
 echo   Instalacao concluida!
-echo   Execute: iniciar.bat
+echo   Execute o arquivo: iniciar.bat
 echo  ================================
 echo.
 pause
