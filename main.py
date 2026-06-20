@@ -245,6 +245,10 @@ class App(tk.Tk):
                   bg="#0f3460", fg="#eaeaea", font=("Segoe UI", 9),
                   relief="flat", cursor="hand2").pack(pady=(0, 4))
 
+        tk.Button(f, text="🔑  Gerenciar API Keys", command=self._open_keys,
+                  bg="#0f3460", fg="#eaeaea", font=("Segoe UI", 9),
+                  relief="flat", cursor="hand2").pack(pady=(0, 4))
+
         tk.Button(f, text="❤  Apoiar via Pix", command=self._open_donation,
                   bg="#1a6b3a", fg="#ffffff", font=("Segoe UI", 9),
                   relief="flat", cursor="hand2").pack(pady=(0, 20))
@@ -307,6 +311,124 @@ class App(tk.Tk):
             keyboard.add_hotkey(hk_translate, lambda: self.after(0, self._toggle))
         if hk_toggle:
             keyboard.add_hotkey(hk_toggle, lambda: self.after(0, self._toggle_overlay))
+
+    def _open_keys(self):
+        win = tk.Toplevel(self)
+        win.title("Gerenciar API Keys")
+        win.configure(bg="#1a1a2e")
+        win.geometry("500x480")
+        win.resizable(False, False)
+        win.attributes("-topmost", True)
+
+        tk.Label(win, text="Gerenciar API Keys", bg="#1a1a2e", fg="#e94560",
+                 font=("Segoe UI", 14, "bold")).pack(pady=(20, 4))
+        tk.Label(win, text="Salve várias keys e troque com um clique quando bater o limite",
+                 bg="#1a1a2e", fg="#aaaaaa", font=("Segoe UI", 9)).pack(pady=(0, 12))
+
+        # Lista de perfis salvos
+        frame_list = tk.LabelFrame(win, text=" Keys salvas ", bg="#1a1a2e", fg="#e94560",
+                                    font=("Segoe UI", 9, "bold"), bd=1, relief="groove")
+        frame_list.pack(fill="x", padx=16, pady=(0, 8))
+
+        self._keys_listbox = tk.Listbox(frame_list, bg="#16213e", fg="#eaeaea",
+                                         selectbackground="#e94560", selectforeground="white",
+                                         font=("Segoe UI", 10), height=6, relief="flat",
+                                         activestyle="none")
+        self._keys_listbox.pack(fill="x", padx=8, pady=8)
+        self._keys_win = win
+        self._refresh_keys_list()
+
+        btn_frame = tk.Frame(frame_list, bg="#1a1a2e")
+        btn_frame.pack(fill="x", padx=8, pady=(0, 8))
+        tk.Button(btn_frame, text="✅  Usar esta key", command=self._use_selected_key,
+                  bg="#1a6b3a", fg="white", relief="flat", cursor="hand2").pack(side="left", padx=(0, 4))
+        tk.Button(btn_frame, text="🗑  Remover", command=self._remove_selected_key,
+                  bg="#6b1a1a", fg="white", relief="flat", cursor="hand2").pack(side="left")
+
+        # Adicionar nova key
+        frame_new = tk.LabelFrame(win, text=" Adicionar nova key ", bg="#1a1a2e", fg="#e94560",
+                                   font=("Segoe UI", 9, "bold"), bd=1, relief="groove")
+        frame_new.pack(fill="x", padx=16, pady=(0, 8))
+        frame_new.columnconfigure(1, weight=1)
+
+        tk.Label(frame_new, text="Apelido:", bg="#1a1a2e", fg="#eaeaea").grid(row=0, column=0, sticky="w", padx=8, pady=4)
+        self._new_key_name = tk.Entry(frame_new, bg="#16213e", fg="#eaeaea", insertbackground="white",
+                                       relief="flat", width=20)
+        self._new_key_name.grid(row=0, column=1, sticky="ew", padx=8, pady=4)
+        self._new_key_name.insert(0, "Ex: Groq pessoal")
+
+        tk.Label(frame_new, text="Provedor:", bg="#1a1a2e", fg="#eaeaea").grid(row=1, column=0, sticky="w", padx=8, pady=4)
+        self._new_key_provider = ttk.Combobox(frame_new, values=PROVIDER_LIST, width=18, state="readonly")
+        self._new_key_provider.set(self.config.get("api_provider", "openrouter"))
+        self._new_key_provider.grid(row=1, column=1, sticky="w", padx=8, pady=4)
+
+        tk.Label(frame_new, text="API Key:", bg="#1a1a2e", fg="#eaeaea").grid(row=2, column=0, sticky="w", padx=8, pady=4)
+        self._new_key_value = tk.Entry(frame_new, bg="#16213e", fg="#eaeaea", insertbackground="white",
+                                        relief="flat", width=36, show="*")
+        self._new_key_value.grid(row=2, column=1, sticky="ew", padx=8, pady=4)
+
+        tk.Label(frame_new, text="Modelo:", bg="#1a1a2e", fg="#eaeaea").grid(row=3, column=0, sticky="w", padx=8, pady=4)
+        self._new_key_model = tk.Entry(frame_new, bg="#16213e", fg="#aaaaaa", insertbackground="white",
+                                        relief="flat", width=36)
+        self._new_key_model.grid(row=3, column=1, sticky="ew", padx=8, pady=4)
+        self._new_key_model.insert(0, "(opcional)")
+
+        tk.Button(frame_new, text="+ Salvar key", command=self._save_new_key,
+                  bg="#e94560", fg="white", relief="flat", cursor="hand2",
+                  font=("Segoe UI", 10)).grid(row=4, column=0, columnspan=2, pady=8)
+
+    def _refresh_keys_list(self):
+        self._keys_listbox.delete(0, "end")
+        profiles = self.config.get("profiles", {})
+        for name, data in profiles.items():
+            provider = data.get("provider", "")
+            model = data.get("model", "")
+            label = f"  {name}  [{provider}]" + (f"  —  {model}" if model else "")
+            self._keys_listbox.insert("end", label)
+
+    def _save_new_key(self):
+        name = self._new_key_name.get().strip()
+        key = self._new_key_value.get().strip()
+        provider = self._new_key_provider.get()
+        model = self._new_key_model.get().strip()
+        if model == "(opcional)":
+            model = ""
+        if not name or not key:
+            return
+        if "profiles" not in self.config:
+            self.config["profiles"] = {}
+        self.config["profiles"][name] = {"api_key": key, "provider": provider, "model": model}
+        save_config(self.config)
+        self._new_key_name.delete(0, "end")
+        self._new_key_value.delete(0, "end")
+        self._refresh_keys_list()
+
+    def _use_selected_key(self):
+        sel = self._keys_listbox.curselection()
+        if not sel:
+            return
+        profiles = self.config.get("profiles", {})
+        name = list(profiles.keys())[sel[0]]
+        data = profiles[name]
+        self.api_key_var.set(data.get("api_key", ""))
+        self.provider_var.set(data.get("provider", "openrouter"))
+        self.model_var.set(data.get("model", ""))
+        self.config["api_key"] = data.get("api_key", "")
+        self.config["api_provider"] = data.get("provider", "openrouter")
+        self.config["model"] = data.get("model", "")
+        self._on_provider_change()
+        save_config(self.config)
+        self._keys_win.destroy()
+
+    def _remove_selected_key(self):
+        sel = self._keys_listbox.curselection()
+        if not sel:
+            return
+        profiles = self.config.get("profiles", {})
+        name = list(profiles.keys())[sel[0]]
+        del self.config["profiles"][name]
+        save_config(self.config)
+        self._refresh_keys_list()
 
     def _open_help(self):
         win = tk.Toplevel(self)
