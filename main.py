@@ -73,6 +73,11 @@ class App(tk.Tk):
         self.geometry("520x700")
         self.resizable(False, True)
         self.configure(bg="#1a1a2e")
+        try:
+            icon = tk.PhotoImage(file="incone.png")
+            self.iconphoto(True, icon)
+        except Exception:
+            pass
 
         self.config = load_config()
         self.running = False
